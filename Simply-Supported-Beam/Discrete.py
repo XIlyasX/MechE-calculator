@@ -1,34 +1,31 @@
-def Descritize(length, number_of_intervals):
-    delta = length / number_of_intervals
-    coordinates = []
-    for i in range(0, number_of_intervals + 1):
-        coordinates.append(i * delta)
-    return coordinates
-    
-def Compute_Shear(beam, R_left, force, distance):
-    for x in beam:
-        x = R_left
-        if x >= distance:
-            x = R_left - force
-
-
 def main():
-    length = input("enter length: ")
-    number_of_intervals = input("enter nuumber of intervals: ")
+    get_input()
 
-    beam = Descritize(int(length),int(number_of_intervals))
-    R_left = 5
-    distance = 5
-    force = 1
-    output = []
+def get_input():
+    
+    loads_number = get_number("Enter number of loads: ")
+    loads = []
+    for i in range(0, int(loads_number)):
+        force = get_number("Enter the value of force: ") 
+        position = get_number("Enter the position where this force is applied: ")
+        loads.append((force, position))
+    print(loads)
+    
+        
 
-    for x in beam:
-        if x >= distance:
-            x = R_left - force
-        else:
-            x = R_left
-        output.append(x)
-    print(output)
+
+
+
+def get_number(prompt):
+    while True:
+        value = input(prompt)
+
+        try:
+            return float(value)
+        except ValueError:
+            print("please enter a number")
+
+
 
 
 main()

@@ -1,77 +1,73 @@
 def main():
-    data = Take_Input()
-    Beam = Descritize(
-        float(data["length"]),
-        float(data["intervals"])
+    data = take_input()
+    beam = descretize(
+        (data["length"]),
+        (data["intervals"])
     )
-    R_left, R_right = Compute_Reactions(
+    r_left, r_right = compute_reactions(
         data["length"],
-        data["distance"],
-        data["force"]
+        data["loads"],
     )
-    Shear_at_x = Compute_Shear_at_x(
+    shear_at_x = compute_shear_at_x(
         data["shear_position"],
-        R_left,
-        data["force"],
-        data["distance"]
+        r_left,
+        data["loads"],
     )
 
-    Moment_at_x = Compute_Moment_at_x(
+    moment_at_x = compute_moment_at_x(
         data["moment_position"],
-        R_left,
-        data["force"],
-        data["distance"]
+        r_left,
+        data["loads"]
     )
-    Shear = Compute_Shear(
-        Beam,
-        R_left,
-        data["force"],
-        data["distance"]
+    Shear = compute_shear(
+        beam,
+        r_left,
+        data["loads"],
     )
-    Moment = Compute_Moment(
-        Beam,
-        R_left,
-        data["force"],
-        data["distance"]
+    Moment = compute_moment(
+        beam,
+        r_left,
+        data["loads"],
     )
     print(f"""Reaction forces:
-          left reaction: {R_left}N
-          right reaction: {R_right}N
+          left reaction: {r_left}N
+          right reaction: {r_right}N
           Shear: {Shear}
           Moment: {Moment}
-          Shear at x: {Shear_at_x}N
-          Moment at x: {Moment_at_x}Nm
+          Shear at x: {shear_at_x}N
+          Moment at x: {moment_at_x}Nm
           """)
 
 
 
-def Take_Input():
+def take_input():
     while True:
         length = get_number("Enter the length of the beam: ")
-        number_of_intervals = get_number("Enter number of intervals: ")
-        distance_from_left = get_number("Enter the distance from left: ")
-        force_in_newtons = get_number("Enter the force in newtons: ")
-        shear_position = get_number("At which point you want to calculate shear?")
-        moment_position = get_number("At which position you want to calculate moment?")
-
-        if number_of_intervals <= 0:
-            print("Number of internvals must be bigger than 0: ")
-            continue
-
         if length <= 0:
             print("Beam length must be positive.\n")
             continue
-
+        number_of_intervals = get_number("Enter number of intervals: ", int)
+        if number_of_intervals <= 0:
+            print("Number of internvals must be bigger than 0: ")
+            continue
+        loads_number = get_number("Enter number of loads: ", int)
+        loads = []
+        for i in range(0, loads_number):
+            while True:
+                force = get_number(f"Enter force #{i+1}: ") 
+                position = get_number(f"Enter position of force #{i+1}: ")
+                if 0 <= position <= length:
+                    loads.append((force, position))
+                    break
+                else:
+                    print("Position must be between 0 and beam length.")
+        shear_position = get_number("At which point you want to calculate shear?")
         if shear_position < 0 or shear_position > length:
             print("Point must be between 0 and beam length.\n")
             continue
-
+        moment_position = get_number("At which position you want to calculate moment?")
         if moment_position < 0 or moment_position > length:
             print("Point must be between 0 and beam length.\n")
-            continue
-
-        if distance_from_left < 0 or distance_from_left > length:
-            print("Distance must be between 0 and beam length.\n")
             continue
     
         break
@@ -79,16 +75,14 @@ def Take_Input():
     print(f"""you entered the following values: 
           Length: {length}m
           Intervals: {number_of_intervals}
-          Distance: {distance_from_left}m 
-          Force: {force_in_newtons}N
+          Loads: {loads}
           Shear position: {shear_position}m
           Moment position: {moment_position}m""")
     
     data = {
         "length": length,
         "intervals": number_of_intervals,
-        "distance": distance_from_left,
-        "force": force_in_newtons,
+        "loads": loads,
         "shear_position": shear_position,
         "moment_position": moment_position
     }
@@ -96,53 +90,53 @@ def Take_Input():
     return data
 
 
-def Compute_Reactions(length, distance_from_left, force_in_newtons):
-    R_right = force_in_newtons * distance_from_left / length
-    R_left = force_in_newtons - R_right
+def compute_reactions(length, loads):
+    r_right = sum(force * position for force,position in loads) / length
+    r_left = sum(force for force,position in loads) - r_right
 
-    return R_left, R_right
+    return r_left, r_right
 
 
-def Compute_Shear(beam, R_left, force, distance):
+def compute_shear(beam, r_left, loads):
     output = []
 
     for x in beam:
-        output.append(Compute_Shear_at_x(x, R_left, force, distance))
+        output.append(compute_shear_at_x(x, r_left, loads))
 
     return output
 
-def Compute_Shear_at_x(x, R_left, force, distance):
-    V = R_left
-    if x >= distance:
-        V = R_left - force
+def compute_shear_at_x(x, r_left, loads):
+    V = r_left - sum(force for force,position in loads if position <= x)
     
     return V
 
-def Compute_Moment(beam, R_left, force, distance):
+def compute_moment(beam, r_left, loads):
     output = []
 
     for x in beam:
-        output.append(Compute_Moment_at_x(x, R_left, force, distance))
+        output.append(compute_moment_at_x(x, r_left, loads))
     
     return output
 
-def Compute_Moment_at_x(x, R_left, force, distance ):
-    M = x * R_left
-    if x >= distance:
-        M = x * R_left - force * (x - distance)
+def compute_moment_at_x(x, r_left, loads ):
+    M = x * r_left
+    for force, position in loads:
+        if position <= x:
+            M -= force * (x - position)
+
     return M
 
-def get_number(prompt):
+def get_number(prompt, number_type = float):
     while True:
         value = input(prompt)
         
         try:
-            return float(value)
+            return number_type(value)
         except ValueError:
             print("Please enter a number")
 
 
-def Descritize(length, number_of_intervals):
+def descretize(length, number_of_intervals):
     delta = length / number_of_intervals
     coordinates = []
     for i in range(0, number_of_intervals + 1):
