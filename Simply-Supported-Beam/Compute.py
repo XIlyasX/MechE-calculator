@@ -19,31 +19,40 @@ def main():
         r_left,
         data["loads"]
     )
-    Shear = compute_shear(
+    shear = compute_shear(
         beam,
         r_left,
         data["loads"],
     )
-    Moment = compute_moment(
+    moment = compute_moment(
         beam,
         r_left,
         data["loads"],
     )
-    (min_shear,max_shear) = extract_min_and_max(Shear)
-    ((min_moment, min_moment_pos),( max_moment, max_moment_pos)) = extract_min_and_max(Moment, beam)
+    stress = compute_stress(
+        moment,
+        data["height"],
+        data["width"]
+    )
+    ( abs_stress, abs_stress_pos) = extract_absolute_value(stress, beam)
+    (min_shear,max_shear) = extract_min_and_max(shear)
+    ((min_moment, min_moment_pos),( max_moment, max_moment_pos)) = extract_min_and_max(moment, beam)
     print(f"""Reaction forces:
           left reaction: {r_left}N
           right reaction: {r_right}N
-          Shear: {Shear}
-          Moment: {Moment}
+          Shear: {shear}
+          Moment: {moment}
+          Stress: {stress}
           Shear at x: {shear_at_x}N
           Moment at x: {moment_at_x}Nm
           min shear: {min_shear}N
-          max sheaer: {max_shear}N
+          max shear: {max_shear}N
           min moment: {min_moment}Nm
           at: {min_moment_pos}m
           max moment: {max_moment}Nm
           at: {max_moment_pos}m
+          absolute stress: {abs_stress}Pa
+          at: {abs_stress_pos}m
           """)
 
 
@@ -58,9 +67,9 @@ def take_input():
         if height <= 0:
             print("Beam's height must be positive.\n")
             continue
-        height = get_number("Enter the height of the beam: ")
-        if height <= 0:
-            print("Beam's height must be positive.\n")
+        width = get_number("Enter the width of the beam: ")
+        if width <= 0:
+            print("Beam's width must be positive.\n")
             continue
         number_of_intervals = get_number("Enter number of intervals: ", int)
         if number_of_intervals <= 0:
@@ -71,7 +80,7 @@ def take_input():
             print("number of loads must be at least 1")
             continue
         loads = []
-        for i in range(0, loads_number):
+        for i in range(loads_number):
             while True:
                 force = get_number(f"Enter force #{i+1}: ") 
                 position = get_number(f"Enter position of force #{i+1}: ")
@@ -93,6 +102,8 @@ def take_input():
 
     print(f"""you entered the following values: 
           Length: {length}m
+          Height: {height}m
+          Width: {width}m
           Intervals: {number_of_intervals}
           Loads: {loads}
           Shear position: {shear_position}m
@@ -100,6 +111,8 @@ def take_input():
     
     data = {
         "length": length,
+        "height": height,
+        "width": width,
         "intervals": number_of_intervals,
         "loads": loads,
         "shear_position": shear_position,
@@ -145,6 +158,16 @@ def compute_moment_at_x(x, r_left, loads ):
 
     return M
 
+def compute_stress(moment, height, width):
+    output = []
+    c = height/2
+    I = width * height**3 / 12
+
+    for M in moment:
+        output.append(M * c / I)
+
+    return output
+
 def get_number(prompt, number_type = float):
     while True:
         value = input(prompt)
@@ -158,7 +181,7 @@ def get_number(prompt, number_type = float):
 def discretize(length, number_of_intervals):
     delta = length / number_of_intervals
     coordinates = []
-    for i in range(0, number_of_intervals + 1):
+    for i in range(number_of_intervals + 1):
         coordinates.append(i * delta)
     return coordinates
     
@@ -172,6 +195,16 @@ def extract_min_and_max(values, coordinates = None):
         return ((min_value, coordinates[min_index]),(max_value, coordinates[max_index])) 
     else:
         return (min_value, max_value)
+    
+def extract_absolute_value(values, coordinates = None):
+    abs_values = [abs(v) for v in values]
+    abs_value = max(abs_values)
+    if coordinates is not None:
+        index = abs_values.index(abs_value) 
+        return (abs_value, coordinates[index])
+    else:
+        return abs_value
+
     
 
 
