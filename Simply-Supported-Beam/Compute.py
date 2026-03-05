@@ -1,6 +1,6 @@
 def main():
     data = take_input()
-    beam = descretize(
+    beam = discretize(
         (data["length"]),
         (data["intervals"])
     )
@@ -29,6 +29,8 @@ def main():
         r_left,
         data["loads"],
     )
+    (min_shear,max_shear) = extract_min_and_max(Shear)
+    ((min_moment, min_moment_pos),( max_moment, max_moment_pos)) = extract_min_and_max(Moment, beam)
     print(f"""Reaction forces:
           left reaction: {r_left}N
           right reaction: {r_right}N
@@ -36,6 +38,12 @@ def main():
           Moment: {Moment}
           Shear at x: {shear_at_x}N
           Moment at x: {moment_at_x}Nm
+          min shear: {min_shear}N
+          max sheaer: {max_shear}N
+          min moment: {min_moment}Nm
+          at: {min_moment_pos}m
+          max moment: {max_moment}Nm
+          at: {max_moment_pos}m
           """)
 
 
@@ -44,13 +52,24 @@ def take_input():
     while True:
         length = get_number("Enter the length of the beam: ")
         if length <= 0:
-            print("Beam length must be positive.\n")
+            print("Beam's length must be positive.\n")
+            continue
+        height = get_number("Enter the height of the beam: ")
+        if height <= 0:
+            print("Beam's height must be positive.\n")
+            continue
+        height = get_number("Enter the height of the beam: ")
+        if height <= 0:
+            print("Beam's height must be positive.\n")
             continue
         number_of_intervals = get_number("Enter number of intervals: ", int)
         if number_of_intervals <= 0:
             print("Number of internvals must be bigger than 0: ")
             continue
         loads_number = get_number("Enter number of loads: ", int)
+        if loads_number <= 0:
+            print("number of loads must be at least 1")
+            continue
         loads = []
         for i in range(0, loads_number):
             while True:
@@ -136,13 +155,25 @@ def get_number(prompt, number_type = float):
             print("Please enter a number")
 
 
-def descretize(length, number_of_intervals):
+def discretize(length, number_of_intervals):
     delta = length / number_of_intervals
     coordinates = []
     for i in range(0, number_of_intervals + 1):
         coordinates.append(i * delta)
     return coordinates
     
+def extract_min_and_max(values, coordinates = None):
+    min_value = min(values)
+    max_value = max(values)
+    
+    if coordinates is not None:
+        min_index = values.index(min_value)
+        max_index = values.index(max_value)
+        return ((min_value, coordinates[min_index]),(max_value, coordinates[max_index])) 
+    else:
+        return (min_value, max_value)
+    
+
 
 
 
