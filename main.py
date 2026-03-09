@@ -172,7 +172,17 @@ class Load:
 class PointLoad(Load):
     def __init__(self, magnitude, position):
         super().__init__(magnitude, position)
+    
+    def shear_contribution():
+        pass
 
+    def moment_contribution():
+        pass
+
+class DistributedLoad(Load):
+    def __init__(self, magnitude, position, end):
+        super().__init__(magnitude, position)
+        self.end = end
 
 # Utility functions
 
