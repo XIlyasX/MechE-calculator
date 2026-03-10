@@ -46,13 +46,29 @@ def get_loads(length):
         loads = []
         for i in range(loads_number):
             while True:
+                load_type = input("Enter load type, P/D: ")
+                if load_type  not in ("P","D"):
+                    print("Enter P/D: ")
+                    continue
                 force = get_number(f"Enter magnitude #{i+1}: ") 
                 position = get_number(f"Enter position of force #{i+1}: ")
-                if 0 <= position <= length:
+                if not 0 <= position <= length:
+                    print(f"Position must be between 0 and beam {length}.")
+                    continue
+                if load_type == "D":
+                    while True:
+                        end = get_number(f"Enter end position of force #{i +1}: ")
+                        if position <= end <= length:
+                            loads.append(DistributedLoad(force, position, end))
+                            break
+                        else:
+                            print(f"Position must be between {position} and beam {length}.")  
+                    break        
+                else:
                     loads.append(PointLoad(force, position))
                     break
-                else:
-                    print("Position must be between 0 and beam length.")
+                
+                    
     
         return loads
     
@@ -65,8 +81,8 @@ class Solver:
 
     def compute_reactions(self):
         if not hasattr(self, '_reactions'):
-            r_right = sum(load.magnitude * load.position for load in self.beam.loads) / self.beam.length
-            r_left = sum(load.magnitude for load in self.beam.loads) - r_right
+            r_right = sum(load.equivalent_magnitude() * load.equivalent_position() for load in self.beam.loads) / self.beam.length
+            r_left = sum(load.equivalent_magnitude() for load in self.beam.loads) - r_right
             self._reactions = (r_left, r_right)
         return self._reactions
     
@@ -75,7 +91,7 @@ class Solver:
         output = []
 
         for x in self.beam.discretize():
-            V = r_left - sum(load.magnitude for load in self.beam.loads if load.position <= x)
+            V = r_left - sum(load.shear_contribution(x) for load in self.beam.loads)
             output.append(V)
         return output
 
@@ -86,8 +102,7 @@ class Solver:
             for x in self.beam.discretize():
                 M = x * r_left
                 for load in self.beam.loads:
-                    if load.position <= x:
-                        M -= load.magnitude * (x - load.position)
+                    M -= load.moment_contribution(x)
                 output.append(M)
             self._moment = output
         return self._moment
@@ -169,20 +184,56 @@ class Load:
         self.magnitude = magnitude
         self.position = position
 
+    def equivalent_force(self):
+        raise NotImplementedError
+        
+    def equivalent_position(self):
+        raise NotImplementedError
+        
+    def shear_contribution(self, x):
+        raise NotImplementedError
+        
+    def moment_contribution(self, x):
+        raise NotImplementedError
+
 class PointLoad(Load):
     def __init__(self, magnitude, position):
         super().__init__(magnitude, position)
     
-    def shear_contribution():
-        pass
+    def equivalent_position(self):
+        return self.position
+    
+    def equivalent_magnitude(self):
+        return self.magnitude
 
-    def moment_contribution():
-        pass
+    def shear_contribution(self, x):
+        if self.position <= x: return self.magnitude 
+        return 0
+
+    def moment_contribution(self,x):
+        if self.position <= x: return self.magnitude * (x - self.position)
+        return 0
 
 class DistributedLoad(Load):
     def __init__(self, magnitude, position, end):
         super().__init__(magnitude, position)
         self.end = end
+
+    def equivalent_position(self):
+        return (self.end + self.position) / 2
+
+    def equivalent_magnitude(self):
+        return self.magnitude * (self.end - self.position)
+
+    def shear_contribution(self, x):
+        if self.position <= x <= self.end: return self.magnitude * (x - self.position) 
+        elif self.end < x: return self.magnitude * (self.end - self.position)
+        return 0
+
+    def moment_contribution(self, x):
+        if self.position <= x <= self.end: return self.magnitude * (x - self.position)**2 / 2
+        elif self.end < x: return self.magnitude * (self.end - self.position) * (x - (self.position + self.end) / 2)
+        return 0
 
 # Utility functions
 
