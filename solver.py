@@ -1,3 +1,5 @@
+import numpy as np
+
 from utils import extract_absolute_value, extract_min_and_max
 
 class Solver:
