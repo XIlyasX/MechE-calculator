@@ -1,3 +1,5 @@
+import numpy as np
+
 class Beam:
     def __init__(self, length,intervals):
         self.length = length
@@ -12,8 +14,7 @@ class Beam:
         self.supports.append(support)
     
     def discretize(self):
-        delta = self.length / self.intervals
-        return [i * delta for i in range(self.intervals + 1)]
+        return np.linspace(0, self.length, self.intervals + 1)
         
 class Section:
     def __init__(self, height, width):
@@ -60,12 +61,10 @@ class PointLoad(Load):
         return self.magnitude
 
     def shear_contribution(self, x):
-        if self.position <= x: return self.magnitude 
-        return 0
+        return np.where(self.position <= x, self.magnitude, 0)
 
     def moment_contribution(self,x):
-        if self.position <= x: return self.magnitude * (x - self.position)
-        return 0
+        return np.where(self.position <= x, self.magnitude * (x - self.position), 0)
 
 class DistributedLoad(Load):
     def __init__(self, magnitude, position, end):
@@ -79,11 +78,11 @@ class DistributedLoad(Load):
         return self.magnitude * (self.end - self.position)
 
     def shear_contribution(self, x):
-        if self.position <= x <= self.end: return self.magnitude * (x - self.position) 
-        elif self.end < x: return self.magnitude * (self.end - self.position)
-        return 0
+        return np.where((self.position <= x) & (x <= self.end),
+                         self.magnitude * (x - self.position),
+                           np.where(self.end < x, self.magnitude * ( self.end - self.position), 0))
 
     def moment_contribution(self, x):
-        if self.position <= x <= self.end: return self.magnitude * (x - self.position)**2 / 2
-        elif self.end < x: return self.magnitude * (self.end - self.position) * (x - (self.position + self.end) / 2)
-        return 0
+        return np.where((self.position <= x) & (x <= self.end),
+                         self.magnitude * (x - self.position)**2 / 2,
+                           np.where(self.end < x, self.magnitude * (self.end - self.position) * (x - (self.position + self.end) / 2), 0))

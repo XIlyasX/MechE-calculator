@@ -16,33 +16,24 @@ class Solver:
     
     def compute_shear(self):
         r_left, r_right = self.compute_reactions()
-        output = []
 
-        for x in self.beam.discretize():
-            V = r_left - sum(load.shear_contribution(x) for load in self.beam.loads)
-            output.append(V)
-        return output
+        x = self.beam.discretize()
+        V = r_left - sum(load.shear_contribution(x) for load in self.beam.loads)
+        return V
 
     def compute_moment(self):
         if not hasattr(self, '_moment'):
-            output = []
             r_left, r_right = self.compute_reactions()
-            for x in self.beam.discretize():
-                M = x * r_left
-                for load in self.beam.loads:
-                    M -= load.moment_contribution(x)
-                output.append(M)
-            self._moment = output
+            x = self.beam.discretize()
+            M = x * r_left - sum(load.moment_contribution(x) for load in self.beam.loads)
+            self._moment = M
         return self._moment
 
     def compute_stress(self):
-        output = []
         c = self.section.height / 2
         I = self.section.width * self.section.height**3 / 12
 
-        for M in self.compute_moment():
-            output.append(M * c / I)
-        return output
+        return self.compute_moment() * c / I
     
     def solve(self):
         beam = self.beam.discretize()
