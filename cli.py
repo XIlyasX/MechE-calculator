@@ -15,12 +15,16 @@ def get_beam_dimensions():
         if width <= 0:
             print("Beam's width must be positive.\n")
             continue
+        E = get_number("Enter Young’s Modulus: ")
+        if E <= 0:
+            print("Must be positive.\n")
+            continue
         intervals = get_number("Enter number of intervals: ", int)
         if intervals <= 0:
             print("Number of intervals must be bigger than 0: ")
             continue
         break
-    return length, height, width, intervals
+    return length, height, width,E, intervals
 
 def get_loads(length):
     while True:

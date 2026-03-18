@@ -4,10 +4,10 @@ from cli import get_beam_dimensions, get_loads
 
 
 def main():
-    length, height, width, intervals = get_beam_dimensions()
+    length, height, width,E, intervals = get_beam_dimensions()
     loads = get_loads(length)
 
-    section = Section(height, width)
+    section = Section(height, width, E)
     beam = Beam(length, intervals)
 
     for load in loads:

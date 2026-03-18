@@ -17,9 +17,10 @@ class Beam:
         return np.linspace(0, self.length, self.intervals + 1)
         
 class Section:
-    def __init__(self, height, width):
+    def __init__(self, height, width, E):
         self.height = height
         self.width = width
+        self.E = E
 
 class Support:
     def __init__(self, position):

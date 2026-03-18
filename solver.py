@@ -25,9 +25,28 @@ class Solver:
         if not hasattr(self, '_moment'):
             r_left, r_right = self.compute_reactions()
             x = self.beam.discretize()
-            M = x * r_left - sum(load.moment_contribution(x) for load in self.beam.loads)
+            M = x * r_left - np.sum([load.moment_contribution(x) for load in self.beam.loads], axis=0)
             self._moment = M
         return self._moment
+    
+    def compute_deflection(self):
+        x = self.beam.discretize()
+        dx = x[1] - x[0]
+
+        M = self.compute_moment()
+
+        E = self.section.E
+        I = self.section.width * self.section.height**3 / 12
+
+        curvature = M / (E * I)
+
+        slope = np.cumsum(curvature) * dx
+        deflection = np.cumsum(slope) * dx
+        
+        deflection -= deflection[0]
+        deflection -= (x / x[-1]) * deflection[-1]
+
+        return deflection
 
     def compute_stress(self):
         c = self.section.height / 2
@@ -40,11 +59,13 @@ class Solver:
         r_left, r_right = self.compute_reactions()
         shear = self.compute_shear()
         moment = self.compute_moment()
+        deflection = self.compute_deflection()
         stress = self.compute_stress()
 
         (abs_stress, abs_stress_pos) = extract_absolute_value(stress, beam)
         (min_shear,max_shear) = extract_min_and_max(shear)
         ((min_moment, min_moment_pos),( max_moment, max_moment_pos)) = extract_min_and_max(moment, beam)
+        (abs_deflection, abs_deflection_pos) = extract_absolute_value(deflection, beam)
 
         print(f"""
               Left reaction: {r_left}N
@@ -53,6 +74,7 @@ class Solver:
               Shear: {shear}
               Moment: {moment}
               Stress: {stress}
+              Deflection: {deflection}
               min shear: {min_shear}N
               max shear: {max_shear}N
               min moment: {min_moment}Nm
@@ -61,4 +83,6 @@ class Solver:
               at: {max_moment_pos}m
               absolute stress: {abs_stress}Pa
               at: {abs_stress_pos}m
+              absolute deflection: {abs_deflection}m
+              at: {abs_deflection_pos}m
               """)
