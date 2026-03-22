@@ -5,12 +5,21 @@ from typing import Literal
 from solver import Solver
 from models import Beam, Section, PinnedSupport, RollerSupport, PointLoad, DistributedLoad
 
+from fastapi.middleware.cors import CORSMiddleware
 
 # -----------------------
 # 1. Create the app
 # -----------------------
 app = FastAPI()
 
+
+# for development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # -----------------------
 # 2. Define input schema

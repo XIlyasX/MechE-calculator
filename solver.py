@@ -19,7 +19,7 @@ class Solver:
 
         x = self.beam.discretize()
         V = r_left - sum(load.shear_contribution(x) for load in self.beam.loads)
-        return V
+        return np.atleast_1d(V)
 
     def compute_moment(self):
         if not hasattr(self, '_moment'):

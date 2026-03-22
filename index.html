@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Beam Solver</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+    <h1>Beam Solver</h1>
+
+    <input type="number" id="length" placeholder="Length (m)">
+    <input type="number" id="height" placeholder="Height (m)">
+    <input type="number" id="width" placeholder="Width (m)">
+    <input type="number" id="E" placeholder="Young's Modulus (Pa)">
+    <input type="number" id="intervals" placeholder="Intervals">
+
+    <button onclick="addload()">Add Load</button>
+    <div id = "loads-container"></div>
+
+
+    <button onclick="solve()">Solve</button>
+
+    <div id="shear-plot"></div>
+    <div id="moment-plot"></div>
+    <div id="deflection-plot"></div>
+
+    <script>
+        let loads = []
+
+        function addload(){
+            const div = document.createElement("div")
+            div.innerHTML = `
+                <input type="number" placeholder="Magnitude">
+                <input type="number" placeholder="Position">
+                <select onchange= "toggleEnd(this)">
+                    <option value="point">Point</option>
+                    <option value="distributed">Distributed</option>
+                </select>
+                <input type="number" placeholder="End Position" style="display:none">
+                <button onclick="this.parentElement.remove()">Delete</button>
+            `
+            document.getElementById("loads-container").appendChild(div)
+        }
+
+        function toggleEnd(select){
+            const endInput = select.nextElementSibling
+            endInput.style.display = select.value === "distributed" ? "block" : "none"
+        }
+
+        async function solve() {
+            const  loadRows = document.getElementById("loads-container").children
+            const loads = []
+
+            for(const row of loadRows){
+                const inputs = row.querySelectorAll("input")
+                const select = row.querySelector("select")
+
+                const load = {
+                    magnitude: parseFloat(inputs[0].value),
+                    position: parseFloat(inputs[1].value),
+                    type: select.value
+                }
+                if(select.value === "distributed"){
+                    load.end = parseFloat(inputs[2].value)
+                }
+                loads.push(load)
+            }
+
+            const data = {
+                length: parseFloat(document.getElementById("length").value),
+                height: parseFloat(document.getElementById("height").value),
+                width: parseFloat(document.getElementById("width").value),
+                E: parseFloat(document.getElementById("E").value),
+                intervals: parseInt(document.getElementById("intervals").value),
+                loads: loads 
+            }
+
+            const response = await fetch("http://127.0.0.1:8000/solve",{
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            })
+
+            const result = await response.json()
+            console.log(result)
+
+            Plotly.newPlot("shear-plot", [{
+                x: result.x,
+                y: result.shear,
+                type: "scatter",
+                name: "Shear"
+            }], {title: "Shear Diagram"})
+
+            Plotly.newPlot("moment-plot", [{
+                x: result.x,
+                y: result.moment,
+                type: "scatter",
+                name: "Moment"
+            }], { title: "Moment Diagram" })
+
+            Plotly.newPlot("deflection-plot", [{
+                x: result.x,
+                y: result.deflection,
+                type: "scatter",
+                name: "Deflection"
+            }], { title: "Deflection Diagram" })
+        }
+    </script>
+
+</body>
+</html>
