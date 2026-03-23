@@ -1,110 +1,510 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Beam Solver</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --surface: #1a1a1a;
+            --border: #2a2a2a;
+            --accent: #e8d5a3;
+            --accent-dim: #b8a57a;
+            --text: #e8e8e8;
+            --text-dim: #888;
+            --blue: #4a9eff;
+            --blue-dim: rgba(74, 158, 255, 0.15);
+            --danger: #ff6b6b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 14px;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 24px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+        }
+
+        h1 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+        }
+
+        .version {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        /* LEFT PANEL */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 24px;
+        }
+
+        .section-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .field-group {
+            margin-bottom: 24px;
+        }
+
+        .field {
+            margin-bottom: 10px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            padding: 8px 10px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--accent-dim);
+        }
+
+        input[type="number"]::placeholder {
+            color: #444;
+        }
+
+        select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            padding: 8px 10px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 20px 0;
+        }
+
+        /* LOAD ROWS */
+        .load-row {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .load-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .load-index {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--accent-dim);
+            letter-spacing: 0.1em;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+            line-height: 1;
+            padding: 0 4px;
+            transition: color 0.15s;
+        }
+
+        .btn-delete:hover { color: var(--danger); }
+
+        .load-row .field { margin-bottom: 8px; }
+        .load-row .field:last-child { margin-bottom: 0; }
+
+        /* BUTTONS */
+        .btn {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            padding: 10px 16px;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.15s;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-dim);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dim);
+            border-color: var(--accent-dim);
+        }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .diagram-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 24px;
+        }
+
+        #beam-diagram {
+            display: block;
+            width: 100%;
+        }
+
+        .chart-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 16px;
+        }
+
+        .chart-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        /* Plotly overrides */
+        .js-plotly-plot .plotly .modebar {
+            background: transparent !important;
+        }
+    </style>
 </head>
 <body>
-    <h1>Beam Solver</h1>
 
-    <input type="number" id="length" placeholder="Length (m)">
-    <input type="number" id="height" placeholder="Height (m)">
-    <input type="number" id="width" placeholder="Width (m)">
-    <input type="number" id="E" placeholder="Young's Modulus (Pa)">
-    <input type="number" id="intervals" placeholder="Intervals">
+<header>
+    <h1>BEAM SOLVER</h1>
+    <span class="version">v1.0 — simply supported</span>
+</header>
 
-    <button onclick="addload()">Add Load</button>
-    <div id = "loads-container"></div>
+<div class="layout">
 
+    <!-- LEFT: INPUT PANEL -->
+    <div class="panel">
 
-    <button onclick="solve()">Solve</button>
+        <div class="field-group">
+            <div class="section-label">Section Properties</div>
+            <div class="field">
+                <label>Length (m)</label>
+                <input type="number" id="length" placeholder="e.g. 10" oninput="drawBeam()">
+            </div>
+            <div class="field">
+                <label>Height (m)</label>
+                <input type="number" id="height" placeholder="e.g. 0.2">
+            </div>
+            <div class="field">
+                <label>Width (m)</label>
+                <input type="number" id="width" placeholder="e.g. 0.1">
+            </div>
+            <div class="field">
+                <label>Young's Modulus (Pa)</label>
+                <input type="number" id="E" placeholder="e.g. 200e9">
+            </div>
+            <div class="field">
+                <label>Intervals</label>
+                <input type="number" id="intervals" placeholder="e.g. 100">
+            </div>
+        </div>
 
-    <div id="shear-plot"></div>
-    <div id="moment-plot"></div>
-    <div id="deflection-plot"></div>
+        <hr class="divider">
 
-    <script>
-        let loads = []
+        <div class="field-group">
+            <div class="section-label">Loads</div>
+            <div id="loads-container"></div>
+            <button class="btn btn-secondary" onclick="addLoad()">+ ADD LOAD</button>
+        </div>
 
-        function addload(){
-            const div = document.createElement("div")
-            div.innerHTML = `
-                <input type="number" placeholder="Magnitude">
-                <input type="number" placeholder="Position">
-                <select onchange= "toggleEnd(this)">
-                    <option value="point">Point</option>
-                    <option value="distributed">Distributed</option>
+        <hr class="divider">
+
+        <button class="btn btn-primary" onclick="solve()">SOLVE →</button>
+
+    </div>
+
+    <!-- RIGHT: OUTPUT PANEL -->
+    <div class="right-panel">
+
+        <div class="diagram-container">
+            <div class="section-label">Beam Diagram</div>
+            <svg id="beam-diagram" height="140" viewBox="0 0 800 140">
+                <!-- beam line -->
+                <line x1="60" y1="80" x2="740" y2="80" stroke="#555" stroke-width="4"/>
+                <!-- left support -->
+                <polygon points="60,80 48,104 72,104" fill="#555"/>
+                <line x1="38" y1="108" x2="82" y2="108" stroke="#555" stroke-width="2"/>
+                <!-- right support -->
+                <polygon points="740,80 728,104 752,104" fill="#555"/>
+                <line x1="720" y1="108" x2="760" y2="108" stroke="#555" stroke-width="2"/>
+                <!-- length label -->
+                <text id="length-label" x="400" y="130" text-anchor="middle"
+                      font-family="IBM Plex Mono, monospace" font-size="11" fill="#888">L = ?</text>
+            </svg>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-label">Shear Force Diagram</div>
+            <div id="shear-plot"></div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-label">Bending Moment Diagram</div>
+            <div id="moment-plot"></div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-label">Deflection Curve</div>
+            <div id="deflection-plot"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const MARGIN = 60
+    const BEAM_END = 740
+    const BEAM_WIDTH = BEAM_END - MARGIN
+    const BEAM_Y = 80
+
+    const plotLayout = (title) => ({
+        title: { text: title, font: { family: 'IBM Plex Mono', size: 12, color: '#888' } },
+        paper_bgcolor: '#1a1a1a',
+        plot_bgcolor: '#1a1a1a',
+        font: { family: 'IBM Plex Mono', color: '#888', size: 11 },
+        xaxis: { gridcolor: '#2a2a2a', zerolinecolor: '#444', title: 'x (m)' },
+        yaxis: { gridcolor: '#2a2a2a', zerolinecolor: '#444' },
+        margin: { t: 40, r: 20, b: 40, l: 50 },
+        height: 220
+    })
+
+    // 1. Load management
+    let loadCount = 0
+
+    function addLoad() {
+        loadCount++
+        const div = document.createElement("div")
+        div.className = "load-row"
+        div.innerHTML = `
+            <div class="load-row-header">
+                <span class="load-index">LOAD ${loadCount}</span>
+                <button class="btn-delete" onclick="this.closest('.load-row').remove(); drawBeam()">×</button>
+            </div>
+            <div class="field">
+                <label>Type</label>
+                <select onchange="toggleEnd(this); drawBeam()">
+                    <option value="point">Point Load</option>
+                    <option value="distributed">Distributed Load</option>
                 </select>
-                <input type="number" placeholder="End Position" style="display:none">
-                <button onclick="this.parentElement.remove()">Delete</button>
-            `
-            document.getElementById("loads-container").appendChild(div)
-        }
+            </div>
+            <div class="field">
+                <label>Magnitude (N or N/m)</label>
+                <input type="number" placeholder="e.g. 1000" oninput="drawBeam()">
+            </div>
+            <div class="field">
+                <label>Position (m)</label>
+                <input type="number" placeholder="e.g. 5" oninput="drawBeam()">
+            </div>
+            <div class="field end-field" style="display:none">
+                <label>End Position (m)</label>
+                <input type="number" placeholder="e.g. 8" oninput="drawBeam()">
+            </div>
+        `
+        document.getElementById("loads-container").appendChild(div)
+    }
 
-        function toggleEnd(select){
-            const endInput = select.nextElementSibling
-            endInput.style.display = select.value === "distributed" ? "block" : "none"
-        }
+    function toggleEnd(select) {
+        const endField = select.closest('.load-row').querySelector('.end-field')
+        endField.style.display = select.value === "distributed" ? "block" : "none"
+    }
 
-        async function solve() {
-            const  loadRows = document.getElementById("loads-container").children
-            const loads = []
+    // 2. Diagram
+    function drawBeam() {
+        const length = parseFloat(document.getElementById("length").value)
+        document.getElementById("length-label").textContent = length ? `L = ${length} m` : "L = ?"
+        drawLoads()
+    }
 
-            for(const row of loadRows){
-                const inputs = row.querySelectorAll("input")
-                const select = row.querySelector("select")
+    function drawLoads() {
+        const svg = document.getElementById("beam-diagram")
+        svg.querySelectorAll(".dynamic").forEach(el => el.remove())
 
-                const load = {
-                    magnitude: parseFloat(inputs[0].value),
-                    position: parseFloat(inputs[1].value),
-                    type: select.value
-                }
-                if(select.value === "distributed"){
-                    load.end = parseFloat(inputs[2].value)
-                }
-                loads.push(load)
+        const length = parseFloat(document.getElementById("length").value)
+        if (!length) return
+
+        const loadRows = document.getElementById("loads-container").querySelectorAll(".load-row")
+
+        for (const row of loadRows) {
+            const inputs = row.querySelectorAll("input[type='number']")
+            const select = row.querySelector("select")
+            const magnitude = parseFloat(inputs[0].value)
+            const position = parseFloat(inputs[1].value)
+
+            if (!magnitude || isNaN(position)) continue
+
+            const svgX = MARGIN + (position / length) * BEAM_WIDTH
+
+            if (select.value === "point") {
+                const arrowTop = BEAM_Y - 45
+                svg.innerHTML += `
+                    <line class="dynamic" x1="${svgX}" y1="${arrowTop}" x2="${svgX}" y2="${BEAM_Y}"
+                          stroke="#4a9eff" stroke-width="2"/>
+                    <polygon class="dynamic"
+                          points="${svgX},${BEAM_Y} ${svgX-5},${BEAM_Y-10} ${svgX+5},${BEAM_Y-10}"
+                          fill="#4a9eff"/>
+                    <text class="dynamic" x="${svgX}" y="${arrowTop - 4}"
+                          text-anchor="middle" font-family="IBM Plex Mono, monospace"
+                          font-size="10" fill="#4a9eff">${magnitude}N</text>
+                `
+            } else {
+                const end = parseFloat(inputs[2].value)
+                if (isNaN(end)) continue
+                const svgEnd = MARGIN + (end / length) * BEAM_WIDTH
+                const rectY = BEAM_Y - 40
+
+                svg.innerHTML += `
+                    <rect class="dynamic" x="${svgX}" y="${rectY}"
+                          width="${svgEnd - svgX}" height="40"
+                          fill="rgba(74,158,255,0.15)" stroke="#4a9eff" stroke-width="1"/>
+                    <text class="dynamic" x="${(svgX + svgEnd) / 2}" y="${rectY - 4}"
+                          text-anchor="middle" font-family="IBM Plex Mono, monospace"
+                          font-size="10" fill="#4a9eff">${magnitude}N/m</text>
+                `
             }
-
-            const data = {
-                length: parseFloat(document.getElementById("length").value),
-                height: parseFloat(document.getElementById("height").value),
-                width: parseFloat(document.getElementById("width").value),
-                E: parseFloat(document.getElementById("E").value),
-                intervals: parseInt(document.getElementById("intervals").value),
-                loads: loads 
-            }
-
-            const response = await fetch("http://127.0.0.1:8000/solve",{
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(data)
-            })
-
-            const result = await response.json()
-            console.log(result)
-
-            Plotly.newPlot("shear-plot", [{
-                x: result.x,
-                y: result.shear,
-                type: "scatter",
-                name: "Shear"
-            }], {title: "Shear Diagram"})
-
-            Plotly.newPlot("moment-plot", [{
-                x: result.x,
-                y: result.moment,
-                type: "scatter",
-                name: "Moment"
-            }], { title: "Moment Diagram" })
-
-            Plotly.newPlot("deflection-plot", [{
-                x: result.x,
-                y: result.deflection,
-                type: "scatter",
-                name: "Deflection"
-            }], { title: "Deflection Diagram" })
         }
-    </script>
+    }
+
+    // 3. Solve
+    async function solve() {
+        const loadRows = document.getElementById("loads-container").querySelectorAll(".load-row")
+        const loads = []
+
+        for (const row of loadRows) {
+            const inputs = row.querySelectorAll("input[type='number']")
+            const select = row.querySelector("select")
+
+            const load = {
+                magnitude: parseFloat(inputs[0].value),
+                position: parseFloat(inputs[1].value),
+                type: select.value
+            }
+            if (select.value === "distributed") {
+                load.end = parseFloat(inputs[2].value)
+            }
+            loads.push(load)
+        }
+
+        const data = {
+            length: parseFloat(document.getElementById("length").value),
+            height: parseFloat(document.getElementById("height").value),
+            width: parseFloat(document.getElementById("width").value),
+            E: parseFloat(document.getElementById("E").value),
+            intervals: parseInt(document.getElementById("intervals").value),
+            loads: loads
+        }
+
+        const response = await fetch("http://127.0.0.1:8000/solve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        })
+
+        const result = await response.json()
+
+        const trace = (y, name, color) => ({
+            x: result.x, y,
+            type: "scatter", name,
+            line: { color, width: 2 },
+            fill: "tozeroy",
+            fillcolor: color.replace(')', ', 0.1)').replace('rgb', 'rgba')
+        })
+
+        Plotly.newPlot("shear-plot",
+            [trace(result.shear, "Shear (N)", "rgb(74,158,255)")],
+            plotLayout(""))
+
+        Plotly.newPlot("moment-plot",
+            [trace(result.moment, "Moment (Nm)", "rgb(232,213,163)")],
+            plotLayout(""))
+
+        Plotly.newPlot("deflection-plot",
+            [trace(result.deflection, "Deflection (m)", "rgb(100,200,150)")],
+            plotLayout(""))
+    }
+</script>
 
 </body>
 </html>
