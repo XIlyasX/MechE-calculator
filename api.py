@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Literal
 
 from solver import Solver
@@ -30,13 +30,29 @@ class LoadInput(BaseModel):
     position: float = Field(ge=0)
     end: float | None = None   # only for distributed
 
+    @model_validator(mode='after')
+    def validate_end(self):
+        if self.type == "distributed":
+            if self.end is None or self.end <= self.position:
+                raise ValueError("end must be greater than position for distribted loads")
+        return self
+
 class SolveRequest(BaseModel):
     length: float = Field(gt=0)
     height: float = Field(gt=0)
     width: float = Field(gt=0)
     E: float = Field(gt=0)
     intervals: int = Field(gt=0, le=10000)
-    loads: list[LoadInput]
+    loads: list[LoadInput] = Field(min_length=1, max_length=20)
+
+    @model_validator(mode='after')
+    def validate_position(self):
+        for load in self.loads:
+            if load.position > self.length:
+                raise ValueError(f"load position {load.position} exceeds beam length {self.length}")
+            if load.end is not None and load.end > self.length:
+                raise ValueError(f"load end {load.end} exceeds beam length {self.length}")
+        return self
 
 class SolveResponse(BaseModel):
     x: list[float]

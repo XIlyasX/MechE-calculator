@@ -355,6 +355,10 @@
     let loadCount = 0
 
     function addLoad() {
+        if(document.querySelectorAll(".load-row").length >= 20){
+            alert("Maximum 20 loads allowed")
+            return
+        }
         loadCount++
         const div = document.createElement("div")
         div.className = "load-row"
@@ -484,6 +488,13 @@
 
         const result = await response.json()
 
+        if (!response.ok) {
+            const message = Array.isArray(result.detail) 
+            ? result.detail.map(e => e.msg).join(", ")
+            : result.detail
+            alert(message)
+            return
+        }
         const trace = (y, name, color) => ({
             x: result.x, y,
             type: "scatter", name,
