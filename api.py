@@ -16,7 +16,7 @@ app = FastAPI()
 # for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://beam-solver.netlify.app"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
